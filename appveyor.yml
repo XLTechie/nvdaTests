@@ -2,26 +2,25 @@ os: Visual Studio 2019
 version: "{branch}-{build}"
 
 branches:
- only:
+ except:
   - master
-  - beta
-  - rc
-  - /try-.*/
-  - /release-.*/
-  
+  - myBuild
+
 environment:
  PY_PYTHON: 3.7-32
- secure_authenticode_pass:
-  secure: Way+hJyhbiLG/cmCo4+dHHzS5DiSvk/45o6frnIQ27GBX6nVDsh7jwQ7fSnqxBRP
- secure_ssh_pass:
-  secure: Iql/RhSathGacONacsyr6gis+rjL75UFZ/R+nPAJpo3asAzQSQQd8hfxq0iv8+Th
- mozillaSymsAuthToken:
-  secure: p37Fxo78fsRdmR8v8TPz978QvVaqvbjdIBzFe8ZOpX0FUprm46rkhd374QM1CqMO
- symstore: C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\symstore.exe
+ my_ghUser: XLTechie
+ my_repo: nvdaTest
+ my_buildBranch: myBuild
 
 install:
+ - curl -fsSL --clobber --output-dir appveyor\scripts --remote-name-all "\
+   https://raw.githubusercontent.com/%my_gitUser%/%my_repo%/%my_buildBranch%/appveyor/scripts/\
+   {installNVDA,pushPackagingInfo,setBuildVersionVars,setSconsArgs,uploadArtifacts}.ps1"
+ - curl -fsSL --clobber --output-dir appveyor\scripts\tests --remote-name-all "\
+   https://raw.githubusercontent.com/%my_gitUser%/%my_repo%/%my_buildBranch%/appveyor/scripts/tests\
+   {beforeTests,checkTestFailure,lintCheck,systemTests,translationCheck,unitTests}.ps1"
  - ps: appveyor\scripts\setBuildVersionVars.ps1
- - ps: appveyor\scripts\decryptFilesForSigning.ps1
+ #- ps: appveyor\scripts\decryptFilesForSigning.ps1
  - py -m pip install --upgrade --no-warn-script-location pip
  - git submodule update --init
 
@@ -29,8 +28,8 @@ build_script:
  - ps: appveyor\scripts\setSconsArgs.ps1
  - scons source %sconsArgs%
  - scons %sconsOutTargets% %sconsArgs%
- - ps: appveyor\scripts\buildSymbolStore.ps1
- - 7z a -tzip -r output\symbols.zip symbols\*.dl_ symbols\*.ex_ symbols\*.pd_
+ #- ps: appveyor\scripts\buildSymbolStore.ps1
+ #- 7z a -tzip -r output\symbols.zip symbols\*.dl_ symbols\*.ex_ symbols\*.pd_
 
 before_test:
  - ps: appveyor\scripts\tests\beforeTests.ps1
@@ -49,11 +48,10 @@ artifacts:
  - path: output\*
  - path: output\*\*
 
-deploy_script:
- - ps: appveyor\scripts\deployScript.ps1
-
 on_failure:
  - ps: appveyor\scripts\uploadArtifacts.ps1
 
 on_finish:
  - ps: appveyor\scripts\pushPackagingInfo.ps1
+
+max_jobs: 1
