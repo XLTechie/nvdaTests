@@ -71,7 +71,7 @@ git checkout -b myBuild
 Here, we have called the branch "myBuild" just to be clear, but you could call it "appveyor", or anything you want; the name doesn't matter, as long as it makes sense to you, and is unique within the NVDA project.
 
 None of the files in this branch matter, except for `appveyor.yml`, and the files under the `appveyor` directory. You are never going to merge this branch with master. It exists strictly to allow you to keep your copy of `appveyor.yml`, and any customized build scripts, separate from the NV Access copy in the master branch.
-If, in the future, you do want to keep the rest of it up to date with master, you can do so by rebasing on to master periodically as follows:
+If, in the future, you do want to keep the rest of it up to date with master (for example if NV Access modifies the build scripts), you can do so by rebasing on to master periodically as follows:
 ```
 git checkout master
 git pull
@@ -87,10 +87,22 @@ But this isn't something you should do right now.
 Appveyor.yml is divided into sections. [Appveyor] has quite comprehensive [documentation](https://www.appveyor.com/docs/appveyor-yml/) about their [YAML] format, and the Appveyor build configuration specifically. The many possibilities are out of scope for this document, but the minimal necessary configuration is given below.
 
 The next several subsections will explain how to edit appveyor.yml for your own builds.
-**Checkout your new build branch**, open the file in an editor, and follow along.
+**Checkout your new build branch**, open the "`appveyor.yml`" file in an editor, and follow along.
 There is a sample file of the end result available [here](FixMe!), but it is best to read all of this, because there are some sections which must contain values specific to your setup.
 
-If this is your first edit of a [YAML] file, be aware that like Python, the spacing and indentation is very important. Unlike Python, however, tabs are not used in [YAML], and the indentation generally progresses by one space further inward, for each keyword that modifies the starting keyword. (FixMe! is that correctly stated?) (Technically, [Appveyor] wants two spaces per level of indentation according to their [spec](https://www.appveyor.com/docs/appveyor-yml/), but [NV Access] only uses one, so that's what we'll use here.)
+If this is your first edit of a [YAML] file, be aware that like Python, the spacing and indentation is very important. Unlike Python, however, tabs are not the preferred indentation character, spaces are. The indentation generally progresses by one space further inward, for each keyword that modifies the starting keyword. (Technically, [Appveyor] wants two spaces per level of indentation according to their [spec](https://www.appveyor.com/docs/appveyor-yml/), but [NV Access] only uses one, so that's what we'll use here.).
+
+The YAML file consists of several sections, each starting with a keyword, followed by a colon. The section may only hold one value or element, in which case it is usually written on the same line as the introductory keyword. For more complex sections, the initial keyword is on a line of its own, and the section that contains its value, appears on following lines. At the end of each such multi-line section, there is usually a blank line left to aid in readability. You can read more about the [YAML] format, though you shouldn't need to understand it in great detail if you are primarily copying and pasting from this how-to.
+
+#### The top of the file:
+
+The first couple lines of the file, are generally used to specify the build operating system and IDE, and the basic version string to be used by built executables.
+
+The existing lines are fine for that.
+```yaml
+os: Visual Studio 2019
+version: "{branch}-{build}"
+```
 
 #### Branches to build:
 
@@ -117,7 +129,7 @@ branches:
 
 #### Environment:
 
-In the "environment" section, the only variable you need from the NV Access version of the file, is the Python version. This will be 3.7, 32 bit, unless you are experimenting with non-standard Python versions. You may comment out, delete, or leave alone, the rest of the environment variables; they pertain to symbol uploading and signing, neither of which is covered by this how-to, or required for most personal builds.
+In the "environment" section, the only variable you need from the NV Access version of the file, is the Python version. This will be 3.7, 32 bit, unless you are experimenting with non-standard Python versions. You may comment out, delete, or leave alone, the rest of the environment variables; they pertain to symbol uploading and code signing, neither of which is covered by this how-to, or required for most personal builds.
 
 You will, however, need to add a few of your own variables, in order to fetch any customized build scripts from your myBuild (or whatever you called it) branch.
 
@@ -138,7 +150,8 @@ environment:
 The "install" section sets up the environment on which the application (NVDA, in this case) is built.
 At this point, we start to run into scripts and auxiliary files, which NV Access built to make the Appveyor process easier for them, but which may make it a bit more tricky for our purposes.
 The immediate problem we have, is that the scripts in our build branch (myBuild), are not the ones currently installed in the build environment. The scripts that are there, come from the branch you are trying to build, not the branch that configures your build.
-To say that differently: after your Appveyor configuration is finished and working, you will start editing NVDA code, which you will want to compile. For example you may have edits in the "testCode" branch. So you push the testCode branch to GitHub. Appveyor starts up, and attempts to compile that branch. That branch is checked out into your Appveyor build environment.
+
+To explain that another way: after your Appveyor configuration is finished and working, you will start editing NVDA code, which you will want to compile. For example you may have edits in the "testCode" branch. So you push the testCode branch to GitHub. Appveyor starts up, and attempts to compile that branch. That branch is checked out into your Appveyor build environment.
 At this point, the build scripts that it is using, are the ones in testCode. However you aren't working on build scripts, you're working on some other part of the NVDA codebase, so the build scripts are the default ones from the NVDA master branch, which is as it should be.
 But the build scripts you have modified (we will be doing that below), are in your build branch (myBuild). We must somehow make Appveyor go out and get those scripts, to use instead of the ones it already has.
 
