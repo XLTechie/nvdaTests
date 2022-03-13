@@ -17,11 +17,12 @@ Copyright: &copy; 2022, NV Access and Luke Davis, all rights reserved.
 
 For various reasons, you may not be able to, or may not wish to, construct the recommended build environment for NVDA. However, you still might want to create, build, and test your own modifications to the NVDA codebase.
 Cloud-hosted services are available to build software for those not wanting to build it locally. [GitHub Actions](https://github.com/features/actions), is one example.
+
 Another example is [Appveyor], which is the service that NV Access itself uses to build NVDA's production versions, alphas, and other public releases. It is [Appveyor] that we will explore in this article.
 
 ### Prerequisites
 
-Before following the steps in this article, you will need a [GitHub] account, and an [Appveyor] account.
+Before following the steps in this article, you will need a [GitHub] account, and an [Appveyor] account. If you don't yet have an Appveyor account, it is possible for you to login to Appveyor with your GitHub credentials. When you go to create your account on Appveyor, choose "log in with GitHub" as your sign in method. This is not required to complete any aspect of this how-to, but it can be convenient to connect those two accounts.
 
 It is assumed that you have already read the [NVDA] page on [Contributing], in particular the section on the [GitHub process](https://github.com/nvaccess/nvda/wiki/Contributing#github-process), as you will need to have some version of that already in place on your local system.
 
@@ -155,7 +156,7 @@ To explain that another way: after your Appveyor configuration is finished and w
 At this point, the build scripts that it is using, are the ones in testCode. However you aren't working on build scripts, you're working on some other part of the NVDA codebase, so the build scripts are the default ones from the NVDA master branch, which is as it should be.
 But the build scripts you have modified (we will be doing that below), are in your build branch (myBuild). We must somehow make Appveyor go out and get those scripts, to use instead of the ones it already has.
 
-We do that in the "install" section. Below, we give the current contents of that section, line by line, with discussion for each. The revised section appears at the end.
+We do that in the "install" section. Below, we give the current contents of that section, line by line, with discussion for each. The revised portion appears at the end.
 
 ##### Line 1, and some additions:
 
@@ -200,6 +201,23 @@ We aren't signing, so you should comment this line out.
 ```
 You definitely want these lines; they prepare the Python environment, and update the git submodules which NVDA uses. After you're sure things are working, you might want to add a " -q" (quiet) flag after the "git submodule" command, to clean up your logs a little bit.
 
+##### The whole install section:
+
+Here's what the final revised install section should look like.
+```yaml
+install:
+ - curl -fsSL --clobber --output-dir appveyor\scripts --remote-name-all "\
+   https://raw.githubusercontent.com/%my_gitUser%/%my_repo%/%my_buildBranch%/appveyor/scripts/\
+   {installNVDA,pushPackagingInfo,setBuildVersionVars,setSconsArgs,uploadArtifacts}.ps1"
+ - curl -fsSL --clobber --output-dir appveyor\scripts\tests --remote-name-all "\
+   https://raw.githubusercontent.com/%my_gitUser%/%my_repo%/%my_buildBranch%/appveyor/scripts/tests\
+   {beforeTests,checkTestFailure,lintCheck,systemTests,translationCheck,unitTests}.ps1"
+ - ps: appveyor\scripts\setBuildVersionVars.ps1
+ #- ps: appveyor\scripts\decryptFilesForSigning.ps1
+ - py -m pip install --upgrade --no-warn-script-location pip
+ - git submodule update --init
+```
+
 #### The build script:
 
 This section controls the build process. We should leave it largely unchanged, although we will have to edit one of its scripts.
@@ -215,9 +233,9 @@ build_script:
 
 Note: if you do not care about symbols, you can comment out or delete those last two lines.
 
-##### Edits required in scripts/setSconsArgs.ps1:
+##### Edits required in appveyor\scripts\setSconsArgs.ps1:
 
-In the `scripts/setSconsArgs.ps1` file, there is a line (line 13, at the time of this writing), which appears as follows:
+In the `appveyor\scripts\setSconsArgs.ps1` file, there is a line (line 13, at the time of this writing), which appears as follows:
 ```
 $sconsArgs += ' publisher="NV Access"'
 ```
@@ -240,7 +258,7 @@ if(!$env:APPVEYOR_PULL_REQUEST_NUMBER) {
 
 Don't forget to run `git add` after you modify this, or any other, script.
 ```
-git add scripts/setSconsArgs.ps1
+git add appveyor\scripts\setSconsArgs.ps1
 ```
 
 #### Test sections:
@@ -313,7 +331,7 @@ You should probably make sure that Appveyor only builds one branch at a time. Th
 max_jobs: 1
 ```
 
-There are many more things you can do to make the [Appveyor] based development process conform to your development preferences. This includes custom messages in the log at various stages of the build and testing process, emails sent on certain conditions or outcomes, build artifacts uploaded to private FTP servers or other locations, and much much more. All of that is beyond the scope of this document, but reading the extensive [Appveyor] documentation can be give you ideas about what you can do, and how to do it.
+There are many more things you can do to make the [Appveyor] based development process conform to your development preferences. This includes custom messages in the log at various stages of the build and testing process, emails sent on certain conditions or outcomes, build artifacts uploaded to private FTP servers or other locations, and much much more. All of that is beyond the scope of this document, but reading the extensive [Appveyor] documentation can give you plenty of ideas about what you can do, and how to do it.
 
 ### When your files are ready: commit and push
 
