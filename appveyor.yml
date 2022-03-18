@@ -13,10 +13,10 @@ environment:
  my_buildBranch: myBuild
 
 install:
- - curl -fsSL --clobber --output-dir appveyor\scripts --remote-name-all "\
+ - curl -fsSL --output-dir appveyor\scripts --remote-name-all "\
    https://raw.githubusercontent.com/%my_gitUser%/%my_repo%/%my_buildBranch%/appveyor/scripts/\
    {installNVDA,pushPackagingInfo,setBuildVersionVars,setSconsArgs,uploadArtifacts}.ps1"
- - curl -fsSL --clobber --output-dir appveyor\scripts\tests --remote-name-all "\
+ - curl -fsSL --output-dir appveyor\scripts\tests --remote-name-all "\
    https://raw.githubusercontent.com/%my_gitUser%/%my_repo%/%my_buildBranch%/appveyor/scripts/tests\
    {beforeTests,checkTestFailure,lintCheck,systemTests,translationCheck,unitTests}.ps1"
  - ps: appveyor\scripts\setBuildVersionVars.ps1
