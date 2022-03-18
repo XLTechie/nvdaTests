@@ -15,13 +15,9 @@ environment:
 install:
  - cmd: |
      cd appveyor\scripts
-     curl -fsSL --remote-name-all "\
-     https://raw.githubusercontent.com/%my_gitUser%/%my_repo%/%my_buildBranch%/appveyor/scripts/\
-     {installNVDA,pushPackagingInfo,setBuildVersionVars,setSconsArgs,uploadArtifacts}.ps1"
+     curl -fsSL --remote-name-all "https://raw.githubusercontent.com/%my_gitUser%/%my_repo%/%my_buildBranch%/appveyor/scripts/{installNVDA,pushPackagingInfo,setBuildVersionVars,setSconsArgs,uploadArtifacts}.ps1"
      cd tests
-     curl -fsSL --remote-name-all "\
-     https://raw.githubusercontent.com/%my_gitUser%/%my_repo%/%my_buildBranch%/appveyor/scripts/tests\
-     {beforeTests,checkTestFailure,lintCheck,systemTests,translationCheck,unitTests}.ps1"
+     curl -fsSL --remote-name-all "https://raw.githubusercontent.com/%my_gitUser%/%my_repo%/%my_buildBranch%/appveyor/scripts/tests/{beforeTests,checkTestFailure,lintCheck,systemTests,translationCheck,unitTests}.ps1"
  - ps: appveyor\scripts\setBuildVersionVars.ps1
  #- ps: appveyor\scripts\decryptFilesForSigning.ps1
  - py -m pip install --upgrade --no-warn-script-location pip
