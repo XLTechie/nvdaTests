@@ -1,5 +1,5 @@
 os: Visual Studio 2019
-version: "{branch}-{build}"
+version: "tester-{branch}-{build}"
 
 branches:
  except:
@@ -9,7 +9,7 @@ branches:
 environment:
  PY_PYTHON: 3.7-32
  my_ghUser: XLTechie
- my_repo: nvdaTest
+ my_repo: nvdaTests
  my_buildBranch: myBuild
 
 install:
