@@ -5,9 +5,9 @@ clone_depth: 1
 
 branches:
  except:
- - master
- - myBuild
- - howto
+  - master
+  - myBuild
+  - howto
 
 environment:
  PY_PYTHON: 3.7-32
