@@ -8,6 +8,7 @@ branches:
   - master
   - myBuild
   - howto
+  - /fix[0-9]+/
 
 environment:
  PY_PYTHON: 3.7-32
