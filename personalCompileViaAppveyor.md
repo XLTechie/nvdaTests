@@ -11,30 +11,38 @@
 
 Author: Luke Davis, Open Source Systems, Ltd. (@XLTechie on [GitHub])
 
-Copyright: &copy; 2022, Luke Davis and NV Access, all rights reserved.
+Copyright: &copy; 2022-2024, Luke Davis and NV Access, all rights reserved.
 
 ### Introduction
 
-For various reasons, you may not be able to, or may not wish to, construct the recommended build environment for NVDA. However, you still might want to create, build, and test your own modifications to the NVDA codebase.
-Cloud-hosted services are available to build software for those not wanting to build it locally. [GitHub Actions](https://github.com/features/actions), is one example.
+For various reasons, you may not be able to, or may not wish to, construct the recommended build environment for NVDA.
+However, you still might want to create, build, and test your own modifications to the NVDA codebase.
+Cloud-hosted services are available to build software for those not wanting to build it locally.
+[GitHub Actions](https://github.com/features/actions), is one example.
 
-Another example is [Appveyor], which is the service that NV Access itself uses to build NVDA's production versions, alphas, and other public releases. It is [Appveyor] that we will explore in this article.
+Another example is [Appveyor], which is the service that NV Access itself uses to build NVDA's production versions, alphas, and other public releases.
+It is [Appveyor] that we will explore in this article.
 
 #### Structure of this document
 
-In this document, all major sections are titled at heading level 3. Subsections are indicated at heading level 4, and subsidiary items are given heading level 5.
+In this document, all major sections are titled at heading level 3.
+Subsections are indicated at heading level 4, and subsidiary items are given heading level 5.
 
-In particular: each heading for an area to incorporate into your appveyor.yml file, is at level 4, and the build scripts you need to change are at level 5.
+In particular: each heading for an area to incorporate into your `appveyor.yml` file, is at level 4, and the build scripts you need to change are at level 5.
 
 That said, the best way to use this document, is to start at the beginning, and work your way through to the end, at least the first time you create an Appveyor build setup for NVDA.
 
 ### Prerequisites
 
-Before following the steps in this article, you will need a [GitHub] account, and an [Appveyor] account. If you don't yet have an Appveyor account, it is possible for you to login to Appveyor with your GitHub credentials. When you go to create your account on Appveyor, choose "log in with GitHub" as your sign in method. This is not required to complete any aspect of this how-to, but it can be convenient to connect those two accounts.
+Before following the steps in this article, you will need a [GitHub] account, and an [Appveyor] account.
+If you don't yet have an Appveyor account, it is possible for you to login to Appveyor with your GitHub credentials.
+To do this, when you go to create your account on Appveyor, choose "log in with GitHub" as your sign in method.
+Doing it this way is not required to complete any aspect of this how-to, but it can be convenient to connect those two accounts.
 
 It is assumed that you have already read the [NVDA] page on [Contributing], in particular the section on the [GitHub process](https://github.com/nvaccess/nvda/wiki/Contributing#github-process), as you will need to have some version of that already in place on your local system.
 
-Furthermore, you should already be generally familiar with [git], [GitHub], and how to work with repositories. This article won't go into any of these basic areas in any detail, and will only summarize topics the experienced developer is expected to understand already.
+Furthermore, you should already be generally familiar with [git], [GitHub], and how to work with repositories.
+This article won't go into any of these basic areas in any detail, and will only summarize topics the experienced developer is expected to understand already.
 
 ### Situations not covered in this article
 
@@ -42,7 +50,8 @@ Furthermore, you should already be generally familiar with [git], [GitHub], and 
 * We don't include symbol retention and uploading in this article, and disable related elements.
 * Currently, we disable elements related to code signing, and don't attempt it.
 
-*N.B. A future version of this document may cover [Windows package self-signing](https://docs.microsoft.com/en-us/windows/msix/package/create-certificate-package-signing), so that certain Windows features which require signed copies, will work correctly. However we will not be able to follow the [NV Access] model for this, as used with their Appveyor configuration--a different procedure will need to be developed.*
+*N.B. A future version of this document may cover [Windows package self-signing](https://docs.microsoft.com/en-us/windows/msix/package/create-certificate-package-signing), so that certain Windows features which require signed copies, will work correctly.
+However we will not be able to follow the [NV Access] model for this, as used with their Appveyor configuration--a different procedure will need to be developed.*
 
 ### Overview
 
@@ -56,24 +65,36 @@ We will undertake the following general steps:
 
 ### Getting started
 
-If you haven't already, per the "Prerequisites" section above, fork a copy of the main [NVDA] repository into your GitHub account. You can call your fork "NVDA", or "my_nvda", or whatever you want. For the rest of this article, we will assume you have called it "my_nvda" to make a clear separation from the NV Access version of the repository; though just calling it "nvda" is the normal practice.
+If you haven't already, per the "Prerequisites" section above, fork a copy of the main [NVDA] repository into your GitHub account.
+You can call your fork "NVDA", or "my_nvda", or whatever you want.
+For the rest of this article, we will assume you have called it "my_nvda" to make a clear separation from the NV Access version of the repository; though just calling it "nvda" is the normal practice.
 
 Next, clone the fork to your local dev environment, and perform the other setup tasks recommended in the [Contributing] document.
 
 ### Appveyor.yml: the build file
 
-[Appveyor] has several ways that it can access its configuration file, appveyor.yml. Consequently, you have several ways you can proceed at this point. One way, is to host the file completely outside your NVDA fork, such as in a [GitHub] Gist.
+[Appveyor] has several ways that it can access its configuration file, `appveyor.yml`.
+Consequently, you have several ways you can proceed at this point.
+One way, is to host the file completely outside your NVDA fork, such as in a [GitHub] Gist, or on a public-facing web server.
 Instructions for those methods are not included at this time.
 
-*Note: the gist method is documented [here](https://www.appveyor.com/docs/build-configuration/#alternative-yaml-file-location). However, gist creation is slightly difficult from an accessibility prospective, although it can be done. A larger reason not to use it, is that some of NVDA's build scripts will need to be modified in-place. That is more easily done with a branch off of the NVDA fork, as described below.*
+*Note: the gist method is documented [here](https://www.appveyor.com/docs/build-configuration/#alternative-yaml-file-location).
+However, gist creation is slightly difficult from an accessibility prospective, although it can be done on the web with experience; and can also be performed via GitHub's API.
+ A larger reason not to use it, is that some of NVDA's build scripts will need to be modified in-place.
+That is more easily done with a branch off of the NVDA fork, as described below.*
 
-The most straight forward place to locate your build configuration file, is in the NVDA fork repository itself. However, this presents a problem. NV Access already includes an appveyor.yml file, to control their version of the build process. If you change that file, it will leak into your future pull requests, which is undesirable.
+The most straight forward place to locate your build configuration file, is in the NVDA fork repository itself.
+However, this presents a problem.
+NV Access already includes an `appveyor.yml` file, to control their version of the build process.
+If you change that file, it will leak into your future pull requests, which is undesirable.
 
 What you can do instead, is keep all build related files in a build specific branch of your my_nvda repository, and deliver appveyor.yml to Appveyor as if it was being stored on a web server other than GitHub.
 
 #### A branch for your build file
 
-We will make a branch that is dedicated to nothing other than our customized build process. This will enable us to store the appveyor.yml file for appveyor to load and work from, as well as any build scripts we may customize.
+We will make a branch that is dedicated to nothing other than our customized build process.
+This will enable us to store the appveyor.yml file for appveyor to load and work from, as well as any build scripts we may customize.
+
 Change into the directory of your fork, and create and checkout a new branch based on master:
 ```
 cd my_nvda
@@ -82,28 +103,32 @@ git checkout -b myBuild
 ```
 Here, we have called the branch "myBuild" just to be clear, but you could call it "appveyor", or anything you want; the name doesn't matter, as long as it makes sense to you, and is unique within the NVDA project.
 
-None of the files in this branch matter, except for `appveyor.yml`, and the files under the `appveyor` directory. You are never going to merge this branch with master. It exists strictly to allow you to keep your copy of `appveyor.yml`, and any customized build scripts, separate from the NV Access copy in the master branch.
-If, in the future, you do want to keep the rest of it up to date with master (for example if NV Access modifies the build scripts), you can do so by rebasing on to master periodically as follows:
-```
-git checkout master
-git pull
-git submodule update --init
-git checkout myBuild
-git rebase master
-git push -f
-```
-But this isn't something you should do right now.
+None of the files in this branch matter, except for `appveyor.yml`, and the files under the `appveyor` directory.
+You are never going to merge this branch with master.
+It exists strictly to allow you to keep your copy of `appveyor.yml`, and any customized build scripts, separate from the NV Access copy in the master branch.
 
 ### Editing appveyor.yml
 
-Appveyor.yml is divided into sections. [Appveyor] has quite comprehensive [documentation](https://www.appveyor.com/docs/appveyor-yml/) about their [YAML] format, and the Appveyor build configuration specifically. The many possibilities are out of scope for this document, but the minimal necessary configuration is given below.
+`appveyor.yml` is divided into sections.
+[Appveyor] has quite comprehensive [documentation](https://www.appveyor.com/docs/appveyor-yml/) about their [YAML] format, and the Appveyor build configuration specifically.
+The many possibilities are out of scope for this document, but the minimal necessary configuration is given below.
 
-The next several subsections will explain how to edit appveyor.yml for your own builds.
+The next several subsections will explain how to edit `appveyor.yml` for your own builds.
+
 **Checkout your new build branch**, open the "`appveyor.yml`" file in an editor, and follow along.
 
-If this is your first edit of a [YAML] file, be aware that like Python, the spacing and indentation is very important. Unlike Python, however, tabs are not the preferred indentation character, spaces are. The indentation generally progresses by one space further inward, for each keyword that modifies the starting keyword. (Technically, [Appveyor] wants two spaces per level of indentation according to their [spec](https://www.appveyor.com/docs/appveyor-yml/), but [NV Access] only uses one, so that's what we'll use here.).
+If this is your first edit of a [YAML] file, be aware that like Python, the spacing and indentation is very important.
+Unlike Python, however, tabs are not the preferred indentation character for the [NVDA] project, spaces are.
+The indentation generally progresses by one space further inward, for each keyword that modifies the starting keyword. (Technically, [Appveyor] wants two spaces per level of indentation according to their [spec](https://www.appveyor.com/docs/appveyor-yml/), but [NV Access] only uses one, so that's what we'll use here.).
 
-The YAML file consists of several sections, each starting with a keyword, followed by a colon. The section may only hold one value or element, in which case it is usually written on the same line as the introductory keyword. For more complex sections, the initial keyword is on a line of its own, and the section that contains its value appears on the following lines. At the end of each such multi-line section, there is usually a blank line left to aid in readability. You can read more about the [YAML] format, though you shouldn't need to understand it in great detail if you are primarily copying and pasting from this how-to.
+The YAML file consists of several sections, each starting with a keyword, followed by a colon.
+The section may only hold one value or element, in which case it is usually written on the same line as the introductory keyword.
+For more complex sections, the initial keyword is on a line of its own, and the section that contains its value appears on the following lines.
+At the end of each such multi-line section, there is usually a blank line left to aid in readability.
+You can read more about the [YAML] format, though you shouldn't need to understand it in great detail if you are primarily copying and pasting from this how-to.
+The last thing to note, is that this document is based on the 2024 version of the file.
+If the file has changed by the time you read this, assume the new version is more accurate, and try to adapt these instructions to fit.
+In particular, if any section is listed below as not needing to be changed, but the text here is different than what the file in the [NVDA] repository indicates: ignore what is written here and follow the file provided by the project.
 
 #### The top of the file:
 
@@ -117,7 +142,7 @@ version: "{branch}-{build}"
 
 #### Branches to build:
 
-You will first need to edit the "branches" keyword. This tells Appveyor what branches to build. For [NV Access], it is necessary to build production releases, pull request try builds, and other things.
+You will first need to edit the "branches" keyword. This tells Appveyor what branches to build. For [NV Access], it is necessary to build production releases, pull requests, try builds, and so on.
 
 ```yaml
 branches:
@@ -128,6 +153,7 @@ branches:
   - /try-.*/
   - /release-.*/
 ```
+
 You probably don't want to be so specific about what to build. In fact, you most likely want to build all branches that you push, except for master and the branch containing your appveyor config.
 If that is what you want, then change this section, replacing the "only" keyword with the "except" keyword, and list the undesired branches:
 
@@ -138,9 +164,13 @@ branches:
   - myBuild
 ```
 
+If you have some other requirements, modify this section accordingly.
+
 #### Environment:
 
-In the "environment" section, the only variable you need from the NV Access version of the file, is the Python version. This will be 3.7, 32 bit, unless you are experimenting with non-standard Python versions. You may comment out, delete, or leave alone, the rest of the environment variables; they pertain to symbol uploading and code signing, neither of which is covered by this how-to, or required for most personal builds.
+In the "environment" section, the only variable you need from the NV Access version of the file, is the Python version.
+This will be 3.7, 32 bit, unless you are experimenting with non-standard Python versions.
+You may comment out, delete, or leave alone, the rest of the environment variables; they pertain to symbol uploading and code signing, neither of which is covered by this how-to, or required for most personal builds.
 
 You will, however, need to add one variable of your own, in order to fetch any customized build scripts from your myBuild (or whatever you called it) branch.
 
@@ -156,13 +186,22 @@ environment:
 
 The "install" section sets up the environment on which the application (NVDA, in this case) is built.
 At this point, we start to run into scripts and auxiliary files, which NV Access uses to make the Appveyor process more modular, but which may make it a bit more tricky for our purposes.
-The immediate problem we have, is that the scripts in our build branch (myBuild), are not the ones currently installed in the build environment. The scripts that are there, come from the branch you are trying to build, not the branch that configures your build.
+The immediate problem we have, is that the scripts in our build branch (myBuild), are not the ones currently installed in the build environment.
+The scripts that are there, come from the branch you are trying to build, not the branch that configures your build.
 
-To explain that another way: after your Appveyor configuration is finished and working, you will start editing NVDA code, which you will want to compile. For example you may have edits in the "testCode" branch. So you push the testCode branch to GitHub. Appveyor starts up, and attempts to compile that branch. That branch is checked out into your Appveyor build environment.
-At this point, the build scripts that it is using, are the ones in testCode. However you aren't working on build scripts, you're working on some other part of the NVDA codebase, so the build scripts are the default ones from the NVDA master branch, which is as it should be.
-But the build scripts you have modified (we will be doing that below), are in your build branch (myBuild). We must somehow make Appveyor go out and get those scripts, to use instead of the ones it already has.
+To explain that another way: after your Appveyor configuration is finished and working, you will start editing NVDA code, which you will want to compile.
+For example you may have edits in the "testCode" branch.
+So you push the testCode branch to GitHub.
+Appveyor starts up, and attempts to compile that branch.
+That branch is checked out into your Appveyor build environment.
+At this point, the build scripts that it is using, are the ones in testCode.
+However you aren't working on build scripts, you're working on some other part of the NVDA codebase, so the build scripts are the default ones from the NVDA master branch, which is as it should be.
+But the build scripts you have modified (we will be doing that below), are in your build branch (myBuild).
+We must somehow make Appveyor go out and get those scripts, to use instead of the ones it already has.
 
-We do that in the "install" section. Below, we give the current contents of that section, line by line, with discussion for each. The revised portion appears at the end.
+We do that in the "install" section.
+Below, we give the current contents of that section, line by line, with discussion for each.
+The revised portion appears at the end.
 
 ##### Line 1, and some additions:
 
@@ -170,7 +209,9 @@ We do that in the "install" section. Below, we give the current contents of that
 install:
 ```
 
-This initiates the section. The very first thing we have to do, is download our replacement build scripts from our build branch. Add the following lines:
+This initiates the section.
+The very first thing we have to do, is download our replacement build scripts from our build branch.
+Add the following lines:
 
 ```yaml
  - cd appveyor\scripts
@@ -179,6 +220,7 @@ This initiates the section. The very first thing we have to do, is download our 
  - curl -fsSL --remote-name-all "https://raw.githubusercontent.com/%APPVEYOR_REPO_NAME%/%my_buildBranch%/appveyor/scripts/tests/{beforeTests,checkTestFailure,lintCheck,systemTests,translationCheck,unitTests}.ps1"
  - cd %APPVEYOR_BUILD_FOLDER%
 ```
+
 Note that those lines are long, so be careful with line wrapping. There are only five lines shown here.
 
 ##### Original line 2:
@@ -186,17 +228,17 @@ Note that those lines are long, so be careful with line wrapping. There are only
 ```yaml
  - ps: appveyor\scripts\setBuildVersionVars.ps1
 ```
-This runs a PowerShell script, which sets the build version, and contains logic for deciding whether this is a pull request, try, alpha, beta, release, or other kind of build. In general this will result in a sane name for branches you build, so nothing should need to change here.
+
+This runs a PowerShell script, which sets the build version, and contains logic for deciding whether this is a pull request, try, alpha, beta, release, or other kind of build.
+In general this will result in a sane name for branches you build, so nothing should need to change here.
 
 ##### Original line 3:
 
 ```yaml
  - ps: appveyor\scripts\decryptFilesForSigning.ps1
 ```
-We aren't signing, so you should comment this line out.
-```yaml
- #- ps: appveyor\scripts\decryptFilesForSigning.ps1
-```
+
+Signing is beyond the scope of this document currently, but this script should be harmless if it fails, so you may leave it in.
 
 ##### Original lines 4 and 5:
 
@@ -204,7 +246,8 @@ We aren't signing, so you should comment this line out.
  - py -m pip install --upgrade --no-warn-script-location pip
  - git submodule update --init
 ```
-You definitely want these lines; they prepare the Python environment, and update the git submodules which NVDA uses. After you're sure things are working, you might want to add a " -q" (quiet) flag after the "git submodule" command, to clean up your logs a little bit.
+You definitely want these lines; they prepare the Python environment, and update the git submodules which NVDA uses.
+After you're sure things are working, you might want to add a " -q" (quiet) flag after the "git submodule" command, to clean up your logs a little bit.
 
 ##### The complete install section:
 
@@ -308,7 +351,8 @@ on_failure:
 
 #### Finishing up:
 
-And finally, what to do when everything finishes. Again, we can leave this section intact.
+And finally, what to do when everything finishes.
+Again, we can leave this section intact.
 
 ```yaml
 on_finish:
@@ -326,17 +370,21 @@ Since generally you will be testing branches, and not pull requests, you might w
 
 #### Miscellaneous:
 
-You should probably make sure that Appveyor only builds one branch at a time. This is all it can do for free accounts as of the time of this writing, but in case that ever changes, it won't hurt to include the following somewhere in your file:
+You should probably make sure that Appveyor only builds one branch at a time.
+This is all it can do for free accounts as of the time of this writing, but in case that ever changes, it won't hurt to include the following somewhere in your file:
 ```yaml
 max_jobs: 1
 ```
 
-It is also usually advisable to set your initial clone depth to 1. There are parts of the build process that need a deeper clone, but they know how to get it.
+It is also usually advisable to set your initial clone depth to 1.
+There are parts of the build process that need a deeper clone, but they know how to get it.
 ```yaml
 clone_depth: 1
 ```
 
-There are many more things you can do to make the [Appveyor] based development process conform to your development preferences. This includes custom messages in the log at various stages of the build and testing process, emails sent on certain conditions or outcomes, build artifacts uploaded to private FTP servers or other locations, and much much more. All of that is beyond the scope of this document, but reading the extensive [Appveyor] documentation can give you plenty of ideas about what you can do, and how to do it.
+There are many more things you can do to make the [Appveyor] based development process conform to your development preferences.
+This includes custom messages in the log at various stages of the build and testing process, emails sent on certain conditions or outcomes, build artifacts uploaded to private FTP servers or other locations, and much much more.
+All of that is beyond the scope of this document, but reading the extensive [Appveyor] documentation can give you plenty of ideas about what you can do, and how to do it.
 
 ### When your files are ready: commit and push
 
@@ -391,9 +439,10 @@ After properly executing the previous section, you will be on the Appveyor proje
 ### Try your first build
 
 It's now time to try your first build!
-You can either push something to a branch (other than master or myBuild) on your my_nvda repo, or you can select "NEW BUILD" on the Appveyor control page. If you do the latter, it will build master.
+You can either push something to a branch (other than master or myBuild) on your my_nvda repo, or you can select "NEW BUILD" on the Appveyor control page.
+If you do the latter, it will build master.
 
-The build process is likely to take approximately 30 minutes.
+The build process is likely to take approximately 45 minutes.
 You can observe the build in progress, under the "Console" section of the Appveyor interface.
 
 You will have the option to cancel the build if something seems to be going wrong, or you don't like the branch that is being built.
